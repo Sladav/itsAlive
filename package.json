@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack --mode=build",
     "dev": "webpack --progress --colors --watch --mode=dev",
-    "test": "mocha --ui qunit --compilers js:babel-core/register --colors -w ./test/*.spec.js",
-    "watch": "npm-watch"
+    "test": "mocha --compilers js:babel-core/register --colors -w ./test/*.spec.js",
+    "autotest": "npm-watch"
   },
   "watch": {
     "test": "{src,test}/*.js"
