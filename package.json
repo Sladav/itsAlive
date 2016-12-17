@@ -1,0 +1,40 @@
+{
+  "name": "its-alive",
+  "version": "0.1.0",
+  "description": "Dead simple FRP.",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "webpack --mode=build",
+    "dev": "webpack --progress --colors --watch --mode=dev",
+    "test": "mocha --ui qunit --compilers js:babel-core/register --colors -w ./test/*.spec.js",
+    "watch": "npm-watch"
+  },
+  "watch": {
+    "test": "{src,test}/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sladav/itsAlive.git"
+  },
+  "author": "Steve Ladavich <steve.ladavich@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Sladav/itsAlive/issues"
+  },
+  "homepage": "https://github.com/Sladav/itsAlive#readme",
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-eslint": "^7.1.1",
+    "babel-loader": "^6.2.10",
+    "babel-polyfill": "^6.20.0",
+    "babel-preset-env": "^1.1.4",
+    "babel-register": "^6.18.0",
+    "chai": "^3.5.0",
+    "eslint": "^3.12.2",
+    "eslint-loader": "^1.6.1",
+    "mocha": "^3.2.0",
+    "npm-watch": "^0.1.6",
+    "path": "^0.12.7",
+    "webpack": "^1.14.0"
+  }
+}
