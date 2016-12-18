@@ -1,5 +1,8 @@
 /lib
 
+# Files relevant to the design of the library
+/design
+
 # Logs
 logs
 *.log

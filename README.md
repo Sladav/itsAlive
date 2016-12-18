@@ -1,2 +1,0 @@
-# itsAlive
-Dead simple FRP.
