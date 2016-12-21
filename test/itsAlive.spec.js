@@ -215,6 +215,30 @@ describe('listenToInput convenience function', () => {
 
 })
 
+describe('notifying listeners', () => {
+
+  it('notifies listeners', () => {
+    const value = itsAlive(0)
+    const updated = itsAlive(false)
+      .listenTo(value)
+      .setReducer(()=>true)
+
+    value.notify()
+
+    expect(updated.valueOf()).to.true
+  })
+
+  it('allows method chaining', () => {
+    const value = itsAlive(0)
+    const updated = itsAlive(false)
+      .listenTo(value)
+      .setReducer(()=>true)
+
+    expect(value.notify()).to.equal(value)
+  })
+
+})
+
 describe('updating a value', () => {
 
   describe('with supplied value', () => {

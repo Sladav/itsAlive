@@ -30,8 +30,13 @@ function update(value) {
   // notify
   //  if not quiet -> notify
   //  that is: if quiet -> don't notify
-  if(!this._isQuiet) this._listeners.forEach(listener=>listener.update())
+  if(!this._isQuiet) this.notify()
 
+  return this
+}
+
+function notify() {
+  this._listeners.forEach(listener=>listener.update())
   return this
 }
 
@@ -87,6 +92,7 @@ function unquiet() {
 const prototype = {
   valueOf,
   update,
+  notify,
   setReducer,
   setInput,
   setInputs: setInput,
