@@ -124,7 +124,6 @@ describe('setting the inputs', () => {
   it('allows method chaining', () => {
     const value = itsAlive()
     let a=1, b={a:1}, c=[1,2,3], d=()=>{return true}
-    value.setInput(a, b, c, d)
 
     expect(value.setInput(a, b, c, d)).to.be.equal(value)
   })
@@ -162,9 +161,56 @@ describe('listening to other live values', () => {
     const a = itsAlive('a')
     const b = itsAlive('b')
     const c = itsAlive('c')
-    a.listenTo(b,c)
 
     expect(a.listenTo(b,c)).to.be.equal(a)
+  })
+
+})
+
+describe('listenToInput convenience function', () => {
+
+  it('stores variadic arguments to "_inputs" property as an array', () => {
+    const value = itsAlive()
+    let a=itsAlive(1),
+        b=itsAlive({a:1}),
+        c=itsAlive([1,2,3]),
+        d=itsAlive(()=>{return true})
+    value.listenToInput(a, b, c, d)
+
+    expect(value._inputs).to.be.deep.equal([a,b,c,d])
+  })
+
+  it('throws error if other is not listenable', () => {
+    const a = itsAlive('a')
+    const b = itsAlive('b')
+
+    expect(()=>a.listenToInput(0)).to.throw()
+    expect(()=>a.listenToInput(false)).to.throw()
+    expect(()=>a.listenToInput('test')).to.throw()
+    expect(()=>a.listenToInput({})).to.throw()
+    expect(()=>a.listenToInput([])).to.throw()
+    expect(()=>a.listenToInput(()=>{})).to.throw()
+
+    expect(()=>a.listenToInput(b)).to.not.throw()
+    expect(()=>a.listenToInput({_listeners:[]})).to.not.throw()
+  })
+
+  it('adds listeners to the "listeners" array property', () => {
+    const a = itsAlive('a')
+    const b = itsAlive('b')
+    const c = itsAlive('c')
+    a.listenToInput(b,c)
+
+    expect(b._listeners).to.include(a)
+    expect(c._listeners).to.include(a)
+  })
+
+  it('allows method chaining', () => {
+    const a = itsAlive('a')
+    const b = itsAlive('b')
+    const c = itsAlive('c')
+
+    expect(a.listenToInput(b,c)).to.be.equal(a)
   })
 
 })

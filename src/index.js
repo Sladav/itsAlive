@@ -58,6 +58,12 @@ function listenTo(...liveValues) {
   return this
 }
 
+function listenToInput(...inputs) {
+  this.setInput(...inputs)
+  this.listenTo(...inputs)
+  return this
+}
+
 function freeze() {
   this._isFrozen = true
   return this
@@ -85,6 +91,7 @@ const prototype = {
   setInput,
   setInputs: setInput,
   listenTo,
+  listenToInput,
   freeze,
   unfreeze,
   quiet,
