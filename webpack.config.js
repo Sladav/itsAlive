@@ -1,18 +1,17 @@
-// webpack.config.js
-var webpack = require('webpack')
-var path = require('path')
+var webpack = require('webpack');
+var UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
+var path = require('path');
+var env = require('yargs').argv.mode;
 
-var UglifyJsPlugin = webpack.optimize.UglifyJsPlugin
-var env = process.env.WEBPACK_ENV
+var libraryName = 'itsAlive';
 
-var libraryName = 'itsAlive'
-var plugins = [], outputFile
+var plugins = [], outputFile;
 
-if(env === 'build'){
-  plugins.push(new UglifyJsPlugin({minimize: true}))
-  outputFile = libraryName + '.min.js'
-}else{
-  outputFile = libraryName + '.js'
+if (env === 'build') {
+  plugins.push(new UglifyJsPlugin({ minimize: true }));
+  outputFile = libraryName + '.min.js';
+} else {
+  outputFile = libraryName + '.js';
 }
 
 var config = {
@@ -44,6 +43,6 @@ var config = {
     extensions: ['', '.js']
   },
   plugins: plugins
-}
+};
 
-module.exports = config
+module.exports = config;
