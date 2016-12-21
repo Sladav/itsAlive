@@ -2,7 +2,7 @@
   "name": "its-alive",
   "version": "0.2.1",
   "description": "Dead simple FRP.",
-  "main": "lib/itsAlive.js",
+  "main": "lib/itsAlive.min.js",
   "scripts": {
     "build": "webpack --mode=build",
     "dev": "webpack --progress --colors --watch --mode=dev",
