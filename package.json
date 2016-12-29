@@ -1,6 +1,6 @@
 {
   "name": "its-alive",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Dead simple FRP.",
   "main": "lib/itsAlive.min.js",
   "scripts": {
