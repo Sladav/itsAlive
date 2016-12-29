@@ -22,7 +22,8 @@ describe('itsAlive', () => {
       '_inputs',
       '_listeners',
       '_isFrozen',
-      '_isQuiet'
+      '_isQuiet',
+      'trigger'
     ]
 
     const methods = [
@@ -217,6 +218,17 @@ describe('listenToInput convenience function', () => {
 
 describe('notifying listeners', () => {
 
+  it('sets "trigger" on listeners', () => {
+    const value = itsAlive(0)
+    const updated = itsAlive(false)
+      .listenTo(value)
+      .setReducer(()=>true)
+
+    value.notify()
+
+    expect(updated.trigger.valueOf()).to.equal(value)
+  })
+
   it('notifies listeners', () => {
     const value = itsAlive(0)
     const updated = itsAlive(false)
@@ -237,6 +249,28 @@ describe('notifying listeners', () => {
     expect(value.notify()).to.equal(value)
   })
 
+})
+
+describe('trigger value', () => {
+
+  it('allows for merging of two or more values', () => {
+    const odds = itsAlive(1)
+    const evens = itsAlive(2)
+
+    const both = itsAlive()
+    both.listenTo(odds, evens)
+      .setInput(both.trigger)
+      .setReducer(x=>x.valueOf())
+
+    odds.update(3)
+    expect(both.valueOf()).to.equal(3)
+
+    evens.update(4)
+    expect(both.valueOf()).to.equal(4)
+
+    odds.update(57)
+    expect(both.valueOf()).to.equal(57)
+  })
 })
 
 describe('updating a value', () => {

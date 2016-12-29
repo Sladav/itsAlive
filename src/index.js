@@ -36,7 +36,10 @@ function update(value) {
 }
 
 function notify() {
-  this._listeners.forEach(listener=>listener.update())
+  this._listeners.forEach(listener=>{
+    listener.trigger._value = this
+    listener.update()
+  })
   return this
 }
 
@@ -98,6 +101,7 @@ const prototype = {
   setInputs: setInput,
   listenTo,
   listenToInput,
+  listenToInputs: listenToInput,
   freeze,
   unfreeze,
   quiet,
@@ -111,7 +115,11 @@ function itsAlive(initialValue = null) {
     _inputs: [],
     _listeners: [],
     _isFrozen: false,
-    _isQuiet: false
+    _isQuiet: false,
+    trigger: {
+      _value: null,
+      valueOf() { return this._value }
+    }
   })
 }
 

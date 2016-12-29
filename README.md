@@ -13,7 +13,7 @@ It does this by introducing the concept of **living values** - variables that ar
 
 > **NPM** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `npm install --save its-alive`
 >
-> **UNPKG** &nbsp;&nbsp; https://unpkg.com/its-alive@0.2.2
+> **UNPKG** &nbsp;&nbsp; https://unpkg.com/its-alive@0.3.0
 
 ### Documentation
 
