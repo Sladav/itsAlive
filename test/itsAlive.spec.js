@@ -28,6 +28,7 @@ describe('itsAlive', () => {
 
     const methods = [
       'valueOf',
+      'set',
       'update',
       'reducer',
       'input',
@@ -58,6 +59,12 @@ describe('itsAlive', () => {
 
   })
 
+  it('can set an initial value', () => {
+    const value = itsAlive(0)
+
+    expect(value.valueOf()).to.equal(0)
+  })
+
 })
 
 describe('living value', () => {
@@ -68,12 +75,50 @@ describe('living value', () => {
     expect(value._value).to.equal(null)
     expect(value.valueOf()).to.equal(null)
 
-    expect(value._reducer).to.equal(null)
+    expect(value._reducer.toString())
+      .to.equal('function _reducer(x) {\n      return x;\n    }')
     expect(value._inputs).to.deep.equal([])
     expect(value._listeners).to.deep.equal([])
     expect(value._isFrozen).to.equal(false)
     expect(value._isQuiet).to.equal(false)
 
+  })
+
+})
+
+describe('explicitly setting value', () => {
+
+  it('sets the correct value', () => {
+    const value = itsAlive()
+
+    value.set(0)
+
+    expect(value.valueOf()).to.equal(0)
+  })
+
+  it('bypasses the reducer', () => {
+    const value = itsAlive().reducer(()=>1)
+
+    value.set(0)
+
+    expect(value.valueOf()).to.equal(0)
+  })
+
+  it('notifies listeners', () => {
+    const value = itsAlive()
+    const updated = itsAlive(false)
+      .listenTo(value)
+      .reducer(()=>true)
+
+    value.set(1)
+
+    expect(updated.valueOf()).to.true
+  })
+
+  it('allows method chaining', () => {
+    const value = itsAlive()
+
+    expect(value.set(0)).to.equal(value)
   })
 
 })
@@ -262,156 +307,64 @@ describe('trigger value', () => {
       .input(both.trigger)
       .reducer(x=>x.valueOf())
 
-    odds.update(3)
+    odds.set(3)
     expect(both.valueOf()).to.equal(3)
 
-    evens.update(4)
+    evens.set(4)
     expect(both.valueOf()).to.equal(4)
 
-    odds.update(57)
+    odds.set(57)
     expect(both.valueOf()).to.equal(57)
   })
 })
 
-describe('updating a value', () => {
+describe('updating with default/identity reducer', () => {
 
-  describe('with supplied value', () => {
+  it('is equivalent to setting a value', () => {
+    const value = itsAlive()
 
-    it('updates to supplied value', () => {
-      const value = itsAlive(0)
-      value.update(1)
-
-      expect(value.valueOf()).to.equal(1)
-    })
-
-    it('notifies listeners', () => {
-      const value = itsAlive(0)
-      const updated = itsAlive(false)
-        .listenTo(value)
-        .reducer(()=>true)
-
-      value.update(1)
-
-      expect(updated.valueOf()).to.true
-    })
-
-  })
-
-  describe('without supplied value', () => {
-
-    describe('with proper reducer', () => {
-
-      describe('when reducer result is defined', () => {
-
-        it('updates to reduced input values', () => {
-          const a = itsAlive(1), b = itsAlive(2)
-          const value = itsAlive()
-            .input(a,b)
-            .reducer((a,b)=>a+b)
-
-          value.update()
-
-          expect(value.valueOf()).to.equal(3)
-        })
-
-        it('notifies listeners', () => {
-          const a = itsAlive(1), b = itsAlive(2)
-          const value = itsAlive()
-            .input(a,b)
-            .reducer((a,b)=>a+b)
-
-          const updated = itsAlive(false)
-            .listenTo(value)
-            .reducer(()=>true)
-
-          value.update()
-
-          expect(updated.valueOf()).to.be.true
-        })
-
-      })
-
-      describe('when reducer result is undefined', () => {
-
-        it('does not update', () => {
-          const a = itsAlive(1), b = itsAlive(2)
-          const value = itsAlive()
-            .input(a,b)
-            .reducer((a,b)=>{
-              return a+b < 10 ?
-                a+b :
-                undefined
-            })
-
-          // show "proper" reducer
-          value.update()
-          expect(value.valueOf()).to.equal(3)
-
-          // "proper" reducer returns undefined
-          a.update(10)
-          value.update()
-          expect(value.valueOf()).to.equal(3)
-        })
-
-        it('does not notify listener', () => {
-          const a = itsAlive(10), b = itsAlive(2)
-          const value = itsAlive()
-            .input(a,b)
-            .reducer((a,b)=>{
-              return a+b < 10 ?
-                a+b :
-                undefined
-            })
-
-          const updated = itsAlive(false)
-            .listenTo(value)
-            .reducer(()=>true)
-
-          // undefined result does not trigger notification
-          value.update()
-          expect(updated.valueOf()).to.be.false
-
-          // defined result does trigger notifications
-          a.update(1)
-          value.update()
-          expect(updated.valueOf()).to.be.true
-        })
-
-      })
-
-    })
-
-    describe('without proper reducer', () => {
-
-      it('does not update', () => {
-        const a = itsAlive(1), b = itsAlive(2)
-        const value = itsAlive()
-          .input(a,b)
-
-        // unset reducer defaults to null
-        value.update()
-        expect(value.valueOf()).to.be.null
-      })
-
-      it('does not notify listener', () => {
-        const a = itsAlive(10), b = itsAlive(2)
-        const value = itsAlive()
-          .input(a,b)
-
-        const updated = itsAlive(false)
-          .listenTo(value)
-          .reducer(()=>true)
-
-        // undefined result does not trigger notification
-        value.update()
-        expect(updated.valueOf()).to.be.false
-      })
-
-    })
-
+    value.update(5)
+    expect(value.valueOf()).to.equal(5)
   })
 
 })
+
+describe('updating a value', () => {
+
+  it('updates with partially supplied inputs', () => {
+    const value = itsAlive()
+      .inputs(1,1,1)
+      .reducer((x,y,z) => x+y+z)
+
+    // no supplied inputs
+    value.update()
+    expect(value.valueOf()).to.equal(3)
+
+    // fully supplied inputs
+    value.update(2,2,2)
+    expect(value.valueOf()).to.equal(6)
+
+    // partially supplied inputs
+    value.update(undefined,2)
+    expect(value.valueOf()).to.equal(4)
+  })
+
+  it('does not affect inputs', () => {
+    const value = itsAlive()
+      .inputs(1,1,1)
+      .reducer((x,y,z) => x+y+z)
+
+    // fully supplied inputs
+    value.update(2,2,2)
+    expect(value.valueOf()).to.equal(6)
+
+    // no supplied inputs
+    value.update()
+    expect(value.valueOf()).to.equal(3)
+  })
+
+})
+
 
 describe('freezing a value', () => {
 
