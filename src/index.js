@@ -43,14 +43,14 @@ function notify() {
   return this
 }
 
-function setReducer(reducerFn) {
+function reducer(reducerFn) {
   if(arguments.length > 1) throw new Error('expected single argument')
   if(typeof reducerFn !== 'function') throw new TypeError('expected a function')
   this._reducer = reducerFn
   return this
 }
 
-function setInput(...inputs) {
+function input(...inputs) {
   this._inputs = inputs
   return this
 }
@@ -67,7 +67,7 @@ function listenTo(...liveValues) {
 }
 
 function listenToInput(...inputs) {
-  this.setInput(...inputs)
+  this.input(...inputs)
   this.listenTo(...inputs)
   return this
 }
@@ -96,9 +96,9 @@ const prototype = {
   valueOf,
   update,
   notify,
-  setReducer,
-  setInput,
-  setInputs: setInput,
+  reducer,
+  input,
+  inputs: input,
   listenTo,
   listenToInput,
   listenToInputs: listenToInput,

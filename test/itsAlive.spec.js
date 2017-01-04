@@ -29,8 +29,8 @@ describe('itsAlive', () => {
     const methods = [
       'valueOf',
       'update',
-      'setReducer',
-      'setInput',
+      'reducer',
+      'input',
       'listenTo',
       'freeze',
       'unfreeze',
@@ -83,22 +83,22 @@ describe('setting the reducer', () => {
   it('only accepts a single function', () => {
     const value = itsAlive()
 
-    expect(()=>value.setReducer()).to.throw()
-    expect(()=>value.setReducer(0)).to.throw()
-    expect(()=>value.setReducer(false)).to.throw()
-    expect(()=>value.setReducer('test')).to.throw()
-    expect(()=>value.setReducer([])).to.throw()
-    expect(()=>value.setReducer({})).to.throw()
+    expect(()=>value.reducer()).to.throw()
+    expect(()=>value.reducer(0)).to.throw()
+    expect(()=>value.reducer(false)).to.throw()
+    expect(()=>value.reducer('test')).to.throw()
+    expect(()=>value.reducer([])).to.throw()
+    expect(()=>value.reducer({})).to.throw()
 
-    expect(()=>value.setReducer(()=>{})).to.not.throw()
+    expect(()=>value.reducer(()=>{})).to.not.throw()
 
-    expect(()=>value.setReducer(()=>{},()=>{})).to.throw()
+    expect(()=>value.reducer(()=>{},()=>{})).to.throw()
   })
 
   it('exposes the reducer on the "_reducer" property', () => {
     const value = itsAlive()
     const identity = x => x
-    value.setReducer(identity)
+    value.reducer(identity)
 
     expect(value._reducer).to.equal(identity)
   })
@@ -107,7 +107,7 @@ describe('setting the reducer', () => {
     const value = itsAlive()
     const identity = x => x
 
-    expect(value.setReducer(identity)).to.equal(value)
+    expect(value.reducer(identity)).to.equal(value)
   })
 
 })
@@ -117,7 +117,7 @@ describe('setting the inputs', () => {
   it('stores variadic arguments to "_inputs" property as an array', () => {
     const value = itsAlive()
     let a=1, b={a:1}, c=[1,2,3], d=()=>{return true}
-    value.setInput(a, b, c, d)
+    value.input(a, b, c, d)
 
     expect(value._inputs).to.be.deep.equal([a,b,c,d])
   })
@@ -126,7 +126,7 @@ describe('setting the inputs', () => {
     const value = itsAlive()
     let a=1, b={a:1}, c=[1,2,3], d=()=>{return true}
 
-    expect(value.setInput(a, b, c, d)).to.be.equal(value)
+    expect(value.input(a, b, c, d)).to.be.equal(value)
   })
 
 })
@@ -222,7 +222,7 @@ describe('notifying listeners', () => {
     const value = itsAlive(0)
     const updated = itsAlive(false)
       .listenTo(value)
-      .setReducer(()=>true)
+      .reducer(()=>true)
 
     value.notify()
 
@@ -233,7 +233,7 @@ describe('notifying listeners', () => {
     const value = itsAlive(0)
     const updated = itsAlive(false)
       .listenTo(value)
-      .setReducer(()=>true)
+      .reducer(()=>true)
 
     value.notify()
 
@@ -244,7 +244,7 @@ describe('notifying listeners', () => {
     const value = itsAlive(0)
     const updated = itsAlive(false)
       .listenTo(value)
-      .setReducer(()=>true)
+      .reducer(()=>true)
 
     expect(value.notify()).to.equal(value)
   })
@@ -259,8 +259,8 @@ describe('trigger value', () => {
 
     const both = itsAlive()
     both.listenTo(odds, evens)
-      .setInput(both.trigger)
-      .setReducer(x=>x.valueOf())
+      .input(both.trigger)
+      .reducer(x=>x.valueOf())
 
     odds.update(3)
     expect(both.valueOf()).to.equal(3)
@@ -288,7 +288,7 @@ describe('updating a value', () => {
       const value = itsAlive(0)
       const updated = itsAlive(false)
         .listenTo(value)
-        .setReducer(()=>true)
+        .reducer(()=>true)
 
       value.update(1)
 
@@ -306,8 +306,8 @@ describe('updating a value', () => {
         it('updates to reduced input values', () => {
           const a = itsAlive(1), b = itsAlive(2)
           const value = itsAlive()
-            .setInput(a,b)
-            .setReducer((a,b)=>a+b)
+            .input(a,b)
+            .reducer((a,b)=>a+b)
 
           value.update()
 
@@ -317,12 +317,12 @@ describe('updating a value', () => {
         it('notifies listeners', () => {
           const a = itsAlive(1), b = itsAlive(2)
           const value = itsAlive()
-            .setInput(a,b)
-            .setReducer((a,b)=>a+b)
+            .input(a,b)
+            .reducer((a,b)=>a+b)
 
           const updated = itsAlive(false)
             .listenTo(value)
-            .setReducer(()=>true)
+            .reducer(()=>true)
 
           value.update()
 
@@ -336,8 +336,8 @@ describe('updating a value', () => {
         it('does not update', () => {
           const a = itsAlive(1), b = itsAlive(2)
           const value = itsAlive()
-            .setInput(a,b)
-            .setReducer((a,b)=>{
+            .input(a,b)
+            .reducer((a,b)=>{
               return a+b < 10 ?
                 a+b :
                 undefined
@@ -356,8 +356,8 @@ describe('updating a value', () => {
         it('does not notify listener', () => {
           const a = itsAlive(10), b = itsAlive(2)
           const value = itsAlive()
-            .setInput(a,b)
-            .setReducer((a,b)=>{
+            .input(a,b)
+            .reducer((a,b)=>{
               return a+b < 10 ?
                 a+b :
                 undefined
@@ -365,7 +365,7 @@ describe('updating a value', () => {
 
           const updated = itsAlive(false)
             .listenTo(value)
-            .setReducer(()=>true)
+            .reducer(()=>true)
 
           // undefined result does not trigger notification
           value.update()
@@ -386,7 +386,7 @@ describe('updating a value', () => {
       it('does not update', () => {
         const a = itsAlive(1), b = itsAlive(2)
         const value = itsAlive()
-          .setInput(a,b)
+          .input(a,b)
 
         // unset reducer defaults to null
         value.update()
@@ -396,11 +396,11 @@ describe('updating a value', () => {
       it('does not notify listener', () => {
         const a = itsAlive(10), b = itsAlive(2)
         const value = itsAlive()
-          .setInput(a,b)
+          .input(a,b)
 
         const updated = itsAlive(false)
           .listenTo(value)
-          .setReducer(()=>true)
+          .reducer(()=>true)
 
         // undefined result does not trigger notification
         value.update()
@@ -440,7 +440,7 @@ describe('freezing a value', () => {
     const value = itsAlive(0)
     const updated = itsAlive(false)
       .listenTo(value)
-      .setReducer(()=>true)
+      .reducer(()=>true)
 
     value.freeze()
     value.update(1)
@@ -483,7 +483,7 @@ describe('freezing a value', () => {
       const value = itsAlive(0)
       const updated = itsAlive(false)
         .listenTo(value)
-        .setReducer(()=>true)
+        .reducer(()=>true)
 
       value.freeze()
       value.update(1)
@@ -525,7 +525,7 @@ describe('quieting a value', () => {
     const value = itsAlive(0)
     const updated = itsAlive(false)
       .listenTo(value)
-      .setReducer(()=>true)
+      .reducer(()=>true)
 
     value.quiet()
     value.update(1)
@@ -568,7 +568,7 @@ describe('quieting a value', () => {
       const value = itsAlive(0)
       const updated = itsAlive(false)
         .listenTo(value)
-        .setReducer(()=>true)
+        .reducer(()=>true)
 
       value.quiet()
       value.update(1)
