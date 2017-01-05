@@ -139,7 +139,7 @@ function itsAlive(initialValue = null) {
     _isQuiet: false,
     trigger: {
       _value: null,
-      valueOf() { return this._value }
+      valueOf() { return this._value.valueOf() }
     }
   })
 }

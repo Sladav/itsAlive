@@ -271,7 +271,7 @@ describe('notifying listeners', () => {
 
     value.notify()
 
-    expect(updated.trigger.valueOf()).to.equal(value)
+    expect(updated.trigger._value).to.equal(value)
   })
 
   it('notifies listeners', () => {
@@ -305,7 +305,6 @@ describe('trigger value', () => {
     const both = itsAlive()
     both.listenTo(odds, evens)
       .input(both.trigger)
-      .reducer(x=>x.valueOf())
 
     odds.set(3)
     expect(both.valueOf()).to.equal(3)
