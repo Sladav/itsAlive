@@ -56,10 +56,13 @@ function update(...suppliedInputs) {
 }
 
 function notify() {
+  if(this._isNotifying) throw new Error('circular dependency!')
+  this._isNotifying = true
   this._listeners.forEach(listener => {
     listener.trigger._value = this
     listener.update()
   })
+  this._isNotifying = false
   return this
 }
 
@@ -137,6 +140,7 @@ function itsAlive(initialValue = null) {
     _listeners: [],
     _isFrozen: false,
     _isQuiet: false,
+    _isNotifying: false,
     trigger: {
       _value: null,
       valueOf() { return this._value.valueOf() }

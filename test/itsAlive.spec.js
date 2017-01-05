@@ -23,6 +23,7 @@ describe('itsAlive', () => {
       '_listeners',
       '_isFrozen',
       '_isQuiet',
+      '_isNotifying',
       'trigger'
     ]
 
@@ -532,5 +533,57 @@ describe('quieting a value', () => {
     })
 
   })
+
+})
+
+describe('glitches', () => {
+
+  describe('circular dependencies', () => {
+
+    it('throw an error', () => {
+      const a = itsAlive(0)
+      const b = itsAlive(0)
+      const log = itsAlive()
+
+      a.listenToInput(b).reducer(x=>x+1)
+      b.listenToInput(a).reducer(x=>x+1)
+      log.listenToInput(b).reducer(x=>console.log(x))
+
+      expect(()=>a.update()).to.throw()
+
+    })
+
+  })
+
+  // describe('state flashing', () => {
+  //
+  //   it('is prevented', () => {
+  //     untested() // This test is only tests a simple case, it's not trustable
+  //
+  //     const a = itsAlive(false)
+  //     const b = itsAlive(true)
+  //     const alwaysFalse = itsAlive(false)
+  //     const wasTrue = itsAlive(false)
+  //
+  //     // note: order matters! `alwaysFalse` must listen before `b`
+  //     // `a` prompts `alwaysFalse` to update before `b`
+  //     //  -> `alwaysFalse` updates with intermediate `b`
+  //     //  -> `wasTrue` "flashes"
+  //     // `a` prompts `b` to update; "correct" `b` prompts `alwaysFalse`
+  //     //  -> `alwaysFalse` updates with "correct" `b`
+  //     //  -> `alwaysFalse` ends on false, but it's too late
+  //     alwaysFalse.listenToInputs(a,b).reducer((a,b)=> a && b)
+  //     b.listenToInput(a).reducer(a => !a)
+  //
+  //     wasTrue.listenToInput(alwaysFalse)
+  //       .reducer(check => { if(check) return true })
+  //
+  //     a.update(true)
+  //
+  //     expect(alwaysFalse.valueOf()).to.be.false
+  //     expect(wasTrue.valueOf()).to.be.false
+  //   })
+  //
+  // })
 
 })
