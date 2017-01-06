@@ -1,429 +1,928 @@
 # itsAlive
 Dead simple FRP.
 
-------
-
 ### Overview
 
-**itsAlive** is an attempt to add tangibility to functional reactive programming (FRP) for the purpose of making FRP easier and more accesible to programmers who are new to it.
+**itsAlive** is mostly an experiment in a different way to define a variable. It proposes a middle-ground approach between assignment (one-time definition) and equality (forever-in-sync) that allows you to explicitly define **how** and **when** your values mutate.
 
-It does this by introducing the concept of **living values** - variables that are allowed to mutate but only do so in a controlled fashion. See [documentation](#documentation) section for more details.
+**itsAlive** hopefully adds tangibility to functional reactive programming (FRP) and makes FRP easier and more accesible to programmers who are new to it.
 
 ### Installation
 
 > **NPM** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `npm install --save its-alive`
 >
-> **UNPKG** &nbsp;&nbsp; https://unpkg.com/its-alive@0.3.0
-
-### Documentation
-
- - [Introduction](#introduction)
-	 - [The very basics](#the-very-basics)
-	 - [What's the point?](#we-want-to-define-a-relationship-between-a-and-b-not-simply-assign-b-a-value)
-	 - [Elements of a relationship](#elements-of-a-relationship)
-	 - [**Its Alive!**](#its-alive)
- - [Basics](#basics)
-	 - [What is a "living" value?](#what-is-a-living-value)
-	 - [Updating a living value](#updating-a-living-value)
-	 - [Set Input vs Listen To](#why-are-setinput-and-listento-separated)
-	 - [Values cannot be undefined](#values-cannot-be-undefined)
-	 - [Synchronous updating](#synchronous-updating)
-	 - [Asynchronous updating](#asynchronous-updating)
- - [Advanced](#advanced)
-   - [Freezing a value](#freezing-a-value)
-	 - [Quieting a value](#quieting-a-value)
-	 - [Filter](#filter)
-	 - [Reduce](#reduce)
-	 - [Buffer](#buffer)
- - [API](#api)
- - [Examples](#examples)
+> **UNPKG** &nbsp;&nbsp; https://unpkg.com/its-alive@0.4.1
 
 
-#### Introduction
+## Motivation/Concept
 
-#####**The very basics**
+This section looks at three different ways to relate two variables, <a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a> and <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a> via a function, <a href="https://www.codecogs.com/eqnedit.php?latex=f" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f" title="f" /></a>.
 
-Let's start by thinking about assignment. In JavaScript, variables are assigned **by value**.
+I'll write this vague idea of a "relationship" like this...
 
-```javascript
-let a = 1
-let b = a + 1
-...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\sim&space;a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\sim&space;a" title="b \sim a" /></a>
+
+Then, if we want to see **how** they are related, we can introduce some function, <a href="https://www.codecogs.com/eqnedit.php?latex=f" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f" title="f" /></a> that defines the **how** part.
+
+How do we define the  **when**?
+
+#### Equality
+
+In mathematics, we can write it as an **equality** relationship like this...
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;=&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;=&space;f(a)" title="b = f(a)" /></a>
+
+Without having to worry about real-worldly implementation details, the **when** part is easily defined: **always**.
+
+[This blog post](http://paulstovell.com/blog/reactive-programming) (not mine), does a good job of explaining what this would look like if this existed as an alternative to the assignment operator. A summary:
+
+```
+var f = x => x + 1
+var a = 10
+var b <= f(a)			// The "destiny" operator, implementing equality
+a = 20
+Assert.AreEqual(21, b)	// true
 ```
 
-First, `a`  is assigned a value of `1`.  Then...
+**how**:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f(x)
+**when**:  &nbsp;&nbsp;always
 
-...
 
-... well it's tempting to think `b` is assigned `a+1`, but it is not. `a+1` is evaluated to `2` and `b` is assigned the result.
+#### Assignment
 
-When `a` is modified, the value of `b` does not change...
+When programming, we typically use **assignment**.
 
-```javascript
-...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;:=&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;:=&space;f(a)" title="b := f(a)" /></a>
 
-a = 3
-console.log(b)	// still 2, not 4 (= a + 1 = 3 + 1)
+or in JavaScript
 
-...
+```js
+let b = f(a)
 ```
 
-If we want changes in `a` to be reflected in `b`, we could always rewrite `b = a + 1`, but that kind of sucks.
+The relationship between <a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a> and <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a> is easily broken! When <a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a> changes, <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a> doesn't.
 
-#####**We want to define a relationship between `a` and `b`, not simply assign `b` a value**
-
-Let's leave JavaScript world and describe the relationship in Math world. In Math world, the <a href="https://www.codecogs.com/eqnedit.php?latex==" target="_blank"><img src="https://latex.codecogs.com/gif.latex?=" title="=" /></a> sign is NOT assignment. It means &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a>&nbsp; ***is*** &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=a&plus;1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a&plus;1" title="a+1" /></a>&nbsp; (forever! even after &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=a&plus;1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a>&nbsp; changes)...
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://www.codecogs.com/eqnedit.php?latex=b&space;=&space;a&space;&plus;&space;1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;=&space;a&space;&plus;&space;1" title="b = a + 1" /></a>
-
-We can even abstract out the "doing stuff" part of the relationship and call it a function, &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=f" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f" title="f" /></a>&nbsp;, and let &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=x" target="_blank"><img src="https://latex.codecogs.com/gif.latex?x" title="x" /></a>&nbsp; be some generic input...
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=f(x)&space;=&space;x&space;&plus;&space;1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(x)&space;=&space;x&space;&plus;&space;1" title="f(x) = x + 1" /></a>
-
-... and then rewrite the relationship between &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a>&nbsp; and &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a>&nbsp; to be more concise...
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://www.codecogs.com/eqnedit.php?latex=b&space;=&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;=&space;f(a)" title="b = f(a)" /></a>
-
-If we go back to JavaScript world, we can write an `addOne` function, but unfortunately, this does not fix our issue of assignment - **assignment passes a value, it does not define a relationship.**
-
-```javascript
-function addOne(x) { return x + 1 }
-let a = 1
-let b = addOne(a)
-
-a = 3
-console.log(b)  // still 2, not 4 (= a + 1 = 3 + 1)
+```js
+let f = x => x + 1
+let a = 10
+let b = f(a)	// 11
+a = 20
+console.log(b)	// 11, not 21  :(
 ```
 
-So what problem are we trying to solve? We want to define a relationship between two variables! We do not want to simply evaluate an expression (possibly containing variables) and assign the result to a new variable.
+**how**:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f(x)
+**when**:  &nbsp;&nbsp;at assignment
 
-#####**Elements of a relationship**
+#### Reactive Updating
 
-Let's breakdown out mathematical relationship from the above section. We had...
+The "relationship" used by **itsAlive** lets you explicitly specify the **when**.
 
- - &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a>&nbsp; : &nbsp;***the variable being defined***
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{a}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{a}{\leftarrow}&space;f(a)" title="b \overset{a}{\leftarrow} f(a)" /></a>
 
-and
+When <a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a> changes/updates, reassign <a href="https://www.codecogs.com/eqnedit.php?latex=f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(a)" title="f(a)" /></a> to <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a>.  It's worth nothing that this is effectively the equality relationship defined above - <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a> is always kept updated because it is recalculated every time its only dependency, <a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a>, is changed.
 
- - &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=f(x)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(x)" title="f(x)" /></a>&nbsp; : &nbsp;***a function that takes an input value and modifies it in some way***
- - &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=x" target="_blank"><img src="https://latex.codecogs.com/gif.latex?x" title="x" /></a>&nbsp; : &nbsp;***represents the input to f(x)***
- - &nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a>&nbsp; : &nbsp;***the variable we are using to define b***
+This relation decouples the **how** and the **when**. For instance, if we have a third variable, <a href="https://www.codecogs.com/eqnedit.php?latex=c" target="_blank"><img src="https://latex.codecogs.com/gif.latex?c" title="c" /></a>, we could make <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a> react to <a href="https://www.codecogs.com/eqnedit.php?latex=c" target="_blank"><img src="https://latex.codecogs.com/gif.latex?c" title="c" /></a>, but still define <a href="https://www.codecogs.com/eqnedit.php?latex=b" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b" title="b" /></a> in terms of <a href="https://www.codecogs.com/eqnedit.php?latex=f" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f" title="f" /></a> and <a href="https://www.codecogs.com/eqnedit.php?latex=a" target="_blank"><img src="https://latex.codecogs.com/gif.latex?a" title="a" /></a>.
 
-So what is `b`? It ***is*** `f(x)` where `a` is fills in the input spot `x`.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{c}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{c}{\leftarrow}&space;f(a)" title="b \overset{c}{\leftarrow} f(a)" /></a>
 
-#####**It's Alive! **
+So the full **definition** of `b` is in terms of `f`, `a`, and `c`.
 
-Let's use **itsAlive** to define the relationship between `a` and `b`...
+- `f` -- **how**
+- `a` -- **how**
+- `c` -- **when**
 
-```javascript
-function addOne(x) { return x + 1 }
+**Is this distinction useful??**
 
-// initialize a to 1
-const a = itsAlive(1)
+**- `b` can use itself as an input without blowing up.**
 
-// define relationship between a and b
+For example, imagine you have a counter that increments every time you click:
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=count&space;\overset{click}{\leftarrow}&space;count&space;&plus;&space;1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?count&space;\overset{click}{\leftarrow}&space;count&space;&plus;&space;1" title="count \overset{click}{\leftarrow} count + 1" /></a>
+
+
+**-`b` can be lazy.**
+
+For example, if calculating `f(a)` is expensive, don't recalculate `b` every time `a` changes, but rather by updating `refresh` only when you need the next `b` value.
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{refresh}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{refresh}{\leftarrow}&space;f(a)" title="b \overset{refresh}{\leftarrow} f(a)" /></a>
+
+
+### **The Main API**
+
+So the goal is to do this (see above for explanation)...
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{c}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{c}{\leftarrow}&space;f(a)" title="b \overset{c}{\leftarrow} f(a)" /></a>
+
+when **c** *updates*
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;apply **a** to
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a function, **f**, and
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assign the result to **b**
+
+
+So, the API for defining `b` is...
+
+Initialize `b`
+```js
 const b = itsAlive()
-			.setReducer(addOne)  // use the addOne function for f(x)
-			.listenToInput(a)    // map a to the x (first) input spot       
+```
+Set the reducer function, `f`
+```js
+const b = itsAlive().reducer(f)
+```
+Set input to `a`
+```js
+const b = itsAlive().reducer(f).input(a)
+```
+Listen for updates on `c`
+```js
+const b = itsAlive().reducer(f).input(a).listenTo(c)
+```
+&nbsp;
+
+----------------
+
+# Tutorial (in Examples)
+
+- [Static Living Values](#static-living-values)
+  1. [The default Living Value is a `null`](#the-default-living-value-is-a-null)
+  2. [You can **set a value** explicitly](#you-can-set-a-value-explicitly)
+
+-[Living Values with Inputs](#living-values-with-inputs)
+-[Reductive Living Values](#reductive-living-values)
+-[Reactive Living Values](#reactive-living-values)
+-[Synchronously Updating Living Values](#synchronously-updating-living-values)
+-[Asynchronously Updating Living Values](#asynchronously-updating-living-values)
+-[Ways to stop values from updating](#ways-to-stop-values-from-updating)
+-[Map, Filter, Fold (Reduce), Buffer](#map-filter-fold-reduce-buffer)
+-[Using a Living Value's `.trigger` property](#using-a-living-values-trigger-property)
+-[Extra Examples](#extra-examples)
+
+
+## Static Living Values
+
+### 1. The **default** Living Value is a `null`
+
+[[view code](http://codepen.io/sladav/pen/WRbxJL?editors=0011)]
+```js
+const a = itsAlive()
+console.log( a.valueOf() )    // null
+```
+
+### 2. You can **set a value** explicitly
+
+[[view code](http://codepen.io/sladav/pen/GrgqGx?editors=0011)]
+```js
+const a = itsAlive().set(5)
+console.log( a.valueOf() )    // 5
+```
+
+### 3. Set an **initial value** by supplying it to `itsAlive()`
+
+[[view code](http://codepen.io/sladav/pen/XpJKBm?editors=0011)]
+```js
+const a = itsAlive(5)
+console.log( a.valueOf() )    // 5
+```
+
+is the same as
+
+```js
+const a = itsAlive().set(5)
+console.log( a.valueOf() )    // 5
+```
+
+### 4. You "get" a living value with `.valueOf()`
+
+[[view code](http://codepen.io/sladav/pen/dNPXjR?editors=0011)]
+```js
+const a = itsAlive().set(5)
+
+console.log( a.valueOf() )    // 5
+```
+
+Most binary operators use `valueOf()` too:
+```
++ - * / %
+& | ^ << >> >>>
+< <= > >=
+```
+
+Which means you can also do this...
+```js
+const a = itsAlive().set(5)
+
+console.log( a.valueOf() )    // 5
+console.log( +a )             // 5
+console.log( a + 1 )          // 6
+
+```
+
+### 5. It can be any **JS primitive** or an **object/array/function** except `undefined`
+
+[[view code](http://codepen.io/sladav/pen/MJYeqg?editors=0011)]
+###### **null**
+```js
+const a = itsAlive().set(null)
+console.log( a.valueOf() )    // null
+```
+
+###### **number**
+```js
+const b = itsAlive().set(5)
+console.log( b.valueOf() )    // 5
+```
+
+###### **string**
+```js
+const c = itsAlive().set('str')
+console.log( c.valueOf() )    // 'str'
+```
+
+###### **boolean**
+```js
+const d = itsAlive().set(true)
+console.log( d.valueOf() )    // true
+```
+
+###### **array (object)**
+```js
+const e = itsAlive().set([1,2,3])
+console.log( e.valueOf() )    // [1,2,3]
+```
+
+###### **function (object)**
+```js
+function addOne(a) { return a+1 }
+const f = itsAlive().set(addOne)
+console.log( f.valueOf() )    // addOne
+```
+
+###### or any **object**
+```js
+const g = itsAlive().set({first: 'Bob', last: 'Roberts'})
+console.log( g.valueOf() )    // {first: 'Bob', last: 'Roberts'}
+```
+
+## Living Values with **Inputs**
+
+### 6. You can **set any primitive/object** as an **input**
+
+[[view code](http://codepen.io/sladav/pen/KawMxL?editors=0011)]
+```js
+const a = itsAlive().input(5).update()
+console.log( a.valueOf() )    // 5
+```
+
+### 7. Or use another **Living Value** as an **input**
+
+[[view code](http://codepen.io/sladav/pen/ZLYOqY?editors=0011)]
+```js
+const b = itsAlive(5)
+const a = itsAlive().input(b).update()
+console.log( a.valueOf() )    // 5
+```
+
+### 8. The **default reducer** doesn't really do anything
+
+**It's an identity function.** It just passes the first input through as a value.
+
+So,
+
+[[view code](http://codepen.io/sladav/pen/oBgLaw?editors=0011)]
+```js
+const a = itsAlive().input(5)
+
+```
+
+is the same as
+
+```js
+const b = itsAlive().input(5).reducer( x => x )
+```
+
+### 9. `update` applies the inputs to the reducer function
+
+[[view code](http://codepen.io/sladav/pen/rjaLQO?editors=0011)]
+```js
+const a = itsAlive().input(5)
+console.log( a.valueOf() )    // null --- the default value
+
+a.update()
+console.log( a.valueOf() )    // 5 -- the result of passing 5 to the identity reducer
+```
+
+### 10. Bypass defined inputs by supplying your own input args to `update`
+
+... but it does not redefine the inputs. Do this with caution.
+
+[[view code](http://codepen.io/sladav/pen/OWPXao?editors=0011)]
+```js
+const a = itsAlive().input(5)
+
+a.update(7)
+console.log( a.valueOf() )    // 7 -- the result of passing 7 to the identity reducer
+
+a.update()
+console.log( a.valueOf() )    // 5 -- the result of passing 5 to the identity reducer
+```
+
+### 11. Note: `update` and `set` are **not the same**
+
+`update` applies the inputs (or supplied input args) to the reducer, while
+
+`set` bypasses both inputs and reducer and sets the value directly.
+
+[[view code](http://codepen.io/sladav/pen/KawMrj?editors=0011)]
+```js
+const addOne = x => x + 1
+const a = itsAlive().input(5).reducer(addOne)
+
+a.update()
+console.log( a.valueOf() )    // 6 -- the result of passing 5 to `addOne`
+
+a.update(7)
+console.log( a.valueOf() )    // 8 -- the result of passing 7 to `addOne`
+
+a.set(15)
+console.log( a.valueOf() )    // 15 -- did not use the reducer
+```
+
+
+## **Reductive** Living Values
+... know ***how*** to reduce a set of inputs into a value.
+
+### 12. A `reducer` is a function associated with a Living Value
+
+When a living value is updated the reducer function takes the Living Value inputs and returns a new value.
+
+[[view code](http://codepen.io/sladav/pen/GrgqPd?editors=0011)]
+```js
+const addOne = x => x + 1
+const timesTwo = x => 2*x
+
+const [a,b,c] = [...Array(3)].map(itsAlive)
+
+a.set(1)                        // a is just 1; no input, no reducer
+b.input(a).reducer(addOne)      // b uses addOne; b is a+1
+c.input(b).reducer(timesTwo)    // c uses timesTwo; c is 2*b
+
+// note: update manually because values are not yet reactive...
+b.update()
+c.update()
+
+console.log( b.valueOf() )        // 2  = a + 1 = 2
+console.log( c.valueOf() )        // 4  = 2 * b = 4
+```
+
+### 13. Reducers *can* have side-effects (but should be pure)
+
+Here's two examples of a logger - they log to the console as a side-effect.
+
+[[view code](http://codepen.io/sladav/pen/pRvbqM?editors=0011)]
+**non-reactive**
+```js
+const logger = x => console.log(x)
+const a = itsAlive(0)
+const aLog = itsAlive().input(a).reducer(logger)
+
+aLog.update()   // logs 0 (the value of a)
+a.set(1)
+aLog.update()   // logs 1 (the new value of a)
+```
+
+**reactive**
+```js
+const logger = x => console.log(x)
+const b = itsAlive(0)
+const bLog = itsAlive().listenToInput(b).reducer(logger)
+
+b.set(1)    // logs 1 to console
+b.set(2)    // logs 2 to console
+```
+
+### 14. Living Values ignore `undefined` update values
+
+[[view code](http://codepen.io/sladav/pen/ygyJwL?editors=0011)]
+```js
+const doNothing = x => {}
+
+const a = itsAlive(0)
+const b = itsAlive(1).input(a).reducer(doNothing)
+
+a.set(1)
+b.update()
+console.log( b.valueOf() )  // still 1 (not undefined)
+```
+
+## Reactive Living Values
+... know ***when*** to reduce a set of inputs into a value.
+
+### 15. A Living Value can to **react** to another value updating by listening for updates
+
+[[view code](http://codepen.io/sladav/pen/EZayMg?editors=0011)]
+```js
+const a = itsAlive(0)
+const b = itsAlive(1).listenTo(a).reducer( () => 7 )
+
+// when a updates
+a.update(0)
+
+// b automatically updates too
+console.log( b.valueOf() )  // 7
+```
+
+### 16. Inputs and the values that induce updates are completely decoupled!
+
+[[view code](http://codepen.io/sladav/pen/xgbEgX?editors=0011)]
+```js
+const addOne = x => x + 1
+const a = itsAlive('init')
+const b = itsAlive(0)
+const c = itsAlive().listenTo(a).input(b).reducer(addOne)
+
+// c is initially null
+console.log( c.valueOf() )  // null
+
+// manually updating c, reduces b with addOne
+c.update()
+console.log( c.valueOf() )  // 1  -  b is 0, b+1 is 1
+
+// updating b does not automatically update c
+b.update(1)
+console.log( c.valueOf() )  // still 1
+
+// but updating a DOES automatically update c (with latest b as input)
+a.update('this text does not matter')
+console.log( c.valueOf() )  // 2  -  b is 1, b+1 is 2
+```
+
+### 17. A Living Value can listen/react to its own input(s)
+
+[[view code](http://codepen.io/sladav/pen/vgEXgz?editors=0011)]
+```js
+const addOne = x => x + 1
+const a = itsAlive(0)
+const b = itsAlive(1).listenTo(a).input(a).reducer(addOne)
+
+// when a updates, b updates
+a.update(1)
+console.log( b.valueOf() )  // 2
+
+a.update(2)
+console.log( b.valueOf() )  // 3
 
 a.update(3)
-console.log(b.valueOf())	     // b is 4! Hurrah!
+console.log( b.valueOf() )  // 4
 ```
 
-So, when using **itsAlive**, you explicity define a "living" value as a function and it's inputs - this pairs up perfectly with the mathematical **elements of a relationship** that we defined above.
+### 18. Using `.listenToInput(x)` is the same as `.listenTo(x).input(x)`
 
-#### Basics
+[[view code](http://codepen.io/sladav/pen/BpyLpe?editors=0011)]
+```js
+const addOne = x => x + 1
+const a = itsAlive(0)
+const b = itsAlive(1).listenToInput(a).reducer(addOne)
 
-#####**What *is* a "living" value?**
-
-A "living" value is a **reactive** variable that is made up of the following components
-
- - a **cached value** (a number, string, boolean, null, or object, including arrays and functions; typically not undefined)
- - a **reducer function**
- - a **set of inputs** to the reducer function (which can also be listened to)
- - a **set of values to listen to**
-
-These components are grouped together in an object returned by the **itsAlive** factory function `itsAlive()`. If you inspect the living value directly, you will see the object. The **value** can be accessed through the `.valueOf()` method (which is automatically called when using most binary operators).
-
-```javascript
-const a = itsAlive(3)
-
-console.log(a) 				// object with a bunch of props/methods
-console.log(a.valueOf())	// 3
-console.log(+a)				// 3 - the `+` operator called `.valueOf()`
-console.log(a+1)			// 4 - the `+` operator called `.valueOf()`
+a.update(1)
+console.log( b.valueOf() )  // 2
 ```
 
-Those pieces that make up the living value can be set using the methods on the living value.
+### 19. A Living Value can use itself as an input
 
-```javascript
-function addOne(x) { return x + 1}
-const a = itsAlive(3)
-const b = itsAlive(0)				// set initial cached value to 0
-			.setReducer(addOne)     // use addOne as the reducer function
-			.setInput(a)            // use the value of `a` as the input to addOne
-			.listenTo(a)            // update `b` when `a` updates
+[[view code](http://codepen.io/sladav/pen/pRvEeg?editors=0011)]
+```js
+const addOne = x => x + 1
+const a = itsAlive(0)
 
-// the convenience function `.listenToInput(x)` is a shorter way
-// to write `.setInput(x).listenTo(x)`
-...
-```
-Note that after the above code runs, `a` is `3` and `b` is `0`. At first this might seem strange, but living values have to be explicitly updated! If you're wondering, "then what the hell is the point?", then hopefully its worth noting that when `a` updates, it automatically notifies all values listening to it to update as well.
+a.input(a).reducer(addOne)
 
-```javascript
-...
-console.log(b.valueOf()) 	// 0 - not 3 because `a` or `b` have not been updated
-...
+a.update()
+console.log( a.valueOf() )  // 1
+
+a.update()
+console.log( a.valueOf() )  // 2
+
+a.update()
+console.log( a.valueOf() )  // 3
 ```
 
-#####**Updating a living value**
+### 20. But it should NOT listen/react to itself
 
-You can update a living value by calling it's `.update()` method.
+[[view code](http://codepen.io/sladav/pen/pRvEPg?editors=0011)]
+If it listens/reacts to itself it will immediately infinitely recurse!
 
- - **Without a supplied value**  the inputs are applied to the reducer and the result is stored as the new value
- - **With a supplied value** the reducer is bypassed and the supplied value is stored as the new value
+```js
+const addOne = x => x + 1
+const a = itsAlive(0)
 
-Any time a living value is updated, it automatically updates all values listening to it.
+a.input(a).reducer(addOne)
 
-```javascript
-function addOne(x) { return x + 1}
-const a = itsAlive(3)
-const b = itsAlive(0)				// set initial cached value to 0
-			.setReducer(addOne)     // use addOne as the reducer function
-			.setInput(a)            // use the value of `a` as the input to addOne
-			.listenTo(a)            // update `b` when `a` updates
+a.listenTo(a)
 
-b.update()							// 4 -- the value of `a` (3) was applied to
-console.log(b.valueOf())			// the addOne reducer function
-
-a.update(5)							// 5 -- explicitly set `a` to 5
-console.log(a.valueOf())			
-
-// because `b` was listening to `a`, `b.update()` was called, applying the new value of `a` to the `b` reducer function, addOne.
-
-console.log(b.valueOf()) 			// 6 									
+// error!
+a.update()    // when a updates it updates a which updates a which updates a which....
 ```
 
-##### **Why are `.setInput()` and `.listenTo()` separated?**
+### Synchronously updating Living Values
 
-If you want to create a *relationship* between two variables, like...
+### 21. Update using a for loop
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;=&space;a&space;&plus;&space;1" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;=&space;a&space;&plus;&space;1" title="b = a + 1" /></a>
+[[view code](http://codepen.io/sladav/pen/jyEMYW?editors=0011)]
+```js
+const addOne = x => x + 1
+const timesTwo = x => 2 * x
+const logger = x => console.log(x)
 
-... you want to both set `a` as an input and also listen for changes in `a`. Why have two methods for this and not just use something that does both, something like a `.listenToInput()` method. Well, actually, `.listenToInput()` *is* available as a convenience method, but it's just a shorter way to write `.setInput().listenTo()`.
+const [a, b, c, log] = [...Array(4)].map(itsAlive)
 
-So why are they separated? This gives you the additional option of updating a living value independently of it's inputs. One possible use case for this is that a value can be dependent on itself without infinitely recursing!
+b.listenToInput(a).reducer(addOne)
+c.listenToInput(b).reducer(timesTwo)
+log.listenToInput(c).reducer(logger)
 
-```javascript
-function addOne(x) { return x + 1}
-const a = itsAlive(3)
-const b = itsAlive(0)			// set initial cached value to 0
+console.log('before')
 
-b.setReducer(addOne)     		// use addOne as the reducer function
-	.setInput(b)                // use the current `b` value to calculate new one
-	.listenTo(a)                // update `b` when `a` updates
+for (let counter = 0; counter <= 2; counter++) {
+  a.update(counter)   
+  // counter = 0 -> a = 0 -> b = 0 + 1 = 1 -> c = 2 * 1 = 2
+  // counter = 1 -> a = 1 -> b = 1 + 1 = 2 -> c = 2 * 2 = 4
+  // counter = 2 -> a = 2 -> b = 2 + 1 = 3 -> c = 2 * 3 = 6
+}
 
-a.update(5)							
-console.log(b.valueOf())		// 1
+console.log('after')
 
-a.update(7)							
-console.log(b.valueOf())		// 2
-
-a.update(9)							
-console.log(b.valueOf())		// 3  -- `b` uses addOne to increment ITSELF  
-								// each time `a` is updated			
+// console:
+//    'before'
+//    2
+//    4
+//    6
+//    'after'
 ```
 
-See the advanced section on [Reduce](#reduce) for more.
+### 22. Update using array map
 
+[[view code](http://codepen.io/sladav/pen/RKNGxE?editors=0011)]
+```js
+const addOne = x => x + 1
+const timesTwo = x => 2 * x
+const logger = x => console.log(x)
 
-##### **Values cannot be undefined**
+const [a, b, c, log] = [...Array(4)].map(itsAlive)
 
-Living values cannot be undefined. If you want to represent that the value has no value, use `null`. So what happens if the reducer returns `undefined`?
+b.listenToInput(a).reducer(addOne)
+c.listenToInput(b).reducer(timesTwo)
+log.listenToInput(c).reducer(logger)
 
-It does nothing. It does not update the value. It does not notify it's listeners.
+console.log('before')
 
-See the advanced section on [Filter](#filter) for more.
+[0, 1, 2].map( x => a.update(x) )
+// x = 0 -> a = 0 -> b = 0 + 1 = 1 -> c = 2 * 1 = 2
+// x = 1 -> a = 1 -> b = 1 + 1 = 2 -> c = 2 * 2 = 4
+// x = 2 -> a = 2 -> b = 2 + 1 = 3 -> c = 2 * 3 = 6
 
-##### **Synchronous updating**
+console.log('after')
 
-*to be written...*
+// console:
+//    'before'
+//    2
+//    4
+//    6
+//    'after'
+```
 
-##### **Asynchronous updating**
+### Asynchronously updating Living Values
 
-*to be written...*
+### 23. Update using a timer
 
-#### Advanced
+[[view code](http://codepen.io/sladav/pen/pRvNBZ?editors=0011)]
+```js
+const addOne = x => x + 1
+const timesTwo = x => 2 * x
+const logger = x => console.log(x)
 
-##### **Freezing a value**
+const [a, b, c, log] = [...Array(4)].map(itsAlive)
+
+b.listenToInput(a).reducer(addOne)
+c.listenToInput(b).reducer(timesTwo)
+log.listenToInput(c).reducer(logger)
+
+console.log('before')
+
+setTimeout( () => a.update(0), 1000)
+setTimeout( () => a.update(2), 2000)
+a.update(1)
+
+console.log('after')
+
+// console:
+//    'before'
+//    4
+//    'after'
+//    2     **after 1 second**
+//    6     **after 2 seconds**
+```
+
+### 24. Make a DOM event trigger an update
+
+[[view code](http://codepen.io/sladav/pen/LxEboE?editors=0011)]
+```js
+const addOne = x => x + 1
+const timesTwo = x => 2 * x
+const logger = x => console.log(x)
+
+const [a, b, c, log] = [...Array(4)].map(itsAlive)
+
+b.listenToInput(a).reducer(addOne)
+c.listenToInput(b).reducer(timesTwo)
+log.listenToInput(c).reducer(logger)
+
+document.addEventListener('click', event => a.update(event.clientX))
+
+// for each mouse click console logs 2 * (cursor's xPos + 1)
+```
+
+### 25. Make a Promise trigger an update
+
+[[view code](http://codepen.io/sladav/pen/EZaNzB?editors=0011)]
+```js
+const logger = x => console.log(x)
+
+const [user, email, emailLog, err, errLog] = [...Array(5)].map(itsAlive)
+
+email.listenToInput(user).reducer( u => u.email )
+emailLog.listenToInput(email).reducer(logger)
+errLog.listenToInput(err).reducer(logger)
+
+fetch('http://jsonplaceholder.typicode.com/users/1')
+  .then(r => r.json())
+  .then(u => user.update(u), (e) => err.update(e))
+
+setTimeout(()=>{
+  fetch('http://jsonplaceholder.typicode.com/users/2')
+    .then(r => r.json())
+    .then(u => user.update(u), e => err.update(e))
+}, 2000)
+```
+
+## Ways to stop values from updating
+
+## 26. You can freeze a Living Value
 
 Frozen values cannot be updated. In turn, values listening to the frozen value will not be notified/updated.
 
-```javascript
-function addOne(x) { return x + 1}
+[[view code](http://codepen.io/sladav/pen/RKNoXo?editors=0011)]
+```js
+const addOne = x => x + 1
 const a = itsAlive(3)
-const b = itsAlive(0)				// set initial cached value to 0
-			.setReducer(addOne)     // use addOne as the reducer function
-			.setInput(a)            // use the value of `a` as the input to addOne
-			.listenTo(a)            // update `b` when `a` updates
+const b = itsAlive(0).listenToInput(a).reducer(addOne)
 
 a.freeze()
-a.update(5)					// ignored
-console.log(a.valueOf())	// still 3
-console.log(b.valueOf())	// still 0
+a.update(5)                 // ignored
+console.log(a.valueOf())    // still 3
+console.log(b.valueOf())    // still 0
 
 a.unfreeze()
-a.update(5)					// sets `a` to 5, updates `b` to 6
-console.log(a.valueOf())	// 5
-console.log(b.valueOf())	// 6								
+a.update(5)                 // updates `a` to 5, updates `b` to 6
+console.log(a.valueOf())    // 5
+console.log(b.valueOf())    // 6
 ```
 
-##### **Quieting a value**
-
+## 27. You can quiet a Living Value
 Quieted values can be updated, but will not notify/update values that are listening to it.
 
-```javascript
-function addOne(x) { return x + 1}
+[[view code](http://codepen.io/sladav/pen/wgBoVP?editors=0011)]
+```js
+const addOne = x => x + 1
 const a = itsAlive(3)
-const b = itsAlive(0)				// set initial cached value to 0
-			.setReducer(addOne)     // use addOne as the reducer function
-			.setInput(a)            // use the value of `a` as the input to addOne
-			.listenTo(a)            // update `b` when `a` updates
+const b = itsAlive(0).listenToInput(a).reducer(addOne)
 
 a.quiet()
-a.update(5)					// updates `a` to 5, `b` is not updated
-console.log(a.valueOf())	// 5
-console.log(b.valueOf())	// still 0
+a.update(5)                 // updates `a` to 5, `b` is not notified, not updated
+console.log(a.valueOf())    // 5
+console.log(b.valueOf())    // still 0
 
 a.unquiet()
-a.update(7)					// sets `a` to 5, updates `b` to 6
-console.log(a.valueOf())	// 7
-console.log(b.valueOf())	// 8								
+a.update(7)                 // updates `a` to 7, `b` updates to 8
+console.log(a.valueOf())    // 7
+console.log(b.valueOf())    // 8
 ```
 
-##### **Filter**
+## Map, Filter, Fold (Reduce), Buffer
 
-As discussed [here](#values-cannot-be-undefined), when a values reducer returns an `undefined` value, it simply does nothing. We can use this behavior to design a reducer to selectively fail to update in certain conditions, creating a filter.
+### 28. Map
 
-```javascript
-function addOne_if_under10(x) { if( x < 10) return x+1 }
-const a = itsAlive(3)
-const b = itsAlive(0)				// set initial cached value to 0
-			.setReducer(over10)     // use over10 as the reducer function
-			.setInput(a)            // use the value of `a` as the input to addOne
-			.listenTo(a)            // update `b` when `a` updates
+Setting a reducer in itsAlive is essentially setting a map function. The primary difference between the reducer you set in itsAlive and a map function is that map is strictly 1-to-1, whereas the reducer you set for a living value can be many-to-1; your many inputs are reduced to a single value (rather than being mapped from one value to another).
 
-a.update(5)
-console.log(b.valueOf())	// 6
+[[view code](http://codepen.io/sladav/pen/rjaWXR?editors=0011)]
+```js
+const logger = x => console.log(x.valueOf())
+const addOne = x => x + 1
+const add = (x, y) => x + y
 
-a.update(7)
-console.log(b.valueOf())	// 8
+const a = itsAlive().input(5).reducer(addOne)
+const b = itsAlive().inputs(5,a).reducer(add)
 
-a.update(2500)
-console.log(b.valueOf())	// still 8 -- ignored change since a >= 10						
+const log = itsAlive()
+log.listenTo(a,b).input(log.trigger).reducer(logger)
+
+
+const c = [ 5 ]
+
+a.update()                      //  6
+console.log(c.map(addOne))      //  [ 6 ]
+
+b.update()                      //  11
 ```
 
-Alternatively, we can separate the `addOne`  and `under10` logic by having `b` be dependent on `a` while listening to an intermediate value `isUnder10`.
+### 29. Filter
 
-```javascript
-function addOne(x) { return x+1 }
-function under10(x) { if(x < 10) return true }
+In itsAlive, you can selectively ignore (aka filter) updates to an input by designing your reducer to return `undefined` where appropriate.
 
-const a = itsAlive(3)
-const isUnder10 = itsAlive()
-			.setReducer(under10)
-			.listenToInput(a)
+[[view code](http://codepen.io/sladav/pen/MJYJwZ?editors=0011)]
+```js
+const logger = x => console.log(x)
+const addOne_if_under10 = x => { if( x < 10) return x + 1 }
 
-const b = itsAlive(0)				
-			.setReducer(addOne)     
-			.setInput(a)            
-			.listenTo(isUnder10)    
+const [a, b, bLog] = [...Array(3)].map(itsAlive)
 
-a.update(5)
-console.log(b.valueOf())	// 6 -- `under10` updated from true -> true
-							// this triggered `b` to update too
+b.listenToInput(a).reducer(addOne_if_under10)
+bLog.listenToInput(b).reducer(logger)
 
-a.update(7)
-console.log(b.valueOf())	// 8
+a.update(5)       // logs 6
+a.update(7)       // logs 8
 
-a.update(2500)
-console.log(b.valueOf())	// still 8 -- `under10` ignored change since a >= 10						
+a.update(2500)    // does not log since b was not updated (2500 >= 10)
+console.log('does not log 2500')
+
+console.log( b.valueOf() )  // still 8
 ```
 
-##### **Reduce**
+### 30. Fold (Reduce)
 
-Reduce here is similar to [`Array.prototype.reduce()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce). The reduce process taken, step by step, combines an "accumulated" value with a "current" value to obtain the next "accumulated" value.
+Fold, reduce (as in `Array.prototype.reduce`), accumulate, aggregate are all different names for a higher-order function that, given a series of values, successively modifies an accumulated value with the current value in the series.
 
-You can use a living value to store your "accumulated" value and simply set the value to use itself as an input.
+itsAlive allows you to fold/reduce changes to a value over time by using a second Living Value as an accumulator. The accumulator can maintain a memory of length 1 by using itself as one of its inputs.
 
-```javascript
-// Array.prototype.reduce -- does not use itsAlive
-function accumulate(sum, currentValue) { return sum += currentValue }
-let sum = [1,2,3].reduce(accumulate, 0)		// 6
+[[view code](http://codepen.io/sladav/pen/JEoEGd?editors=0011)]
+```js
+const logger = x => console.log(x)
+const sum = (x, agg) => x + agg
+const [a, aggregate, aggLog] = [...Array(3)].map(itsAlive)
+
+aggregate.listenTo(a).inputs(a, aggregate).reducer(sum)
+aggLog.listenToInput(aggregate).reducer(logger)
+
+a.update(1)   // logs 1
+a.update(2)   // logs 3   since 3 = 2 + 1 = a + agg
+a.update(3)   // logs 6   since 6 = 3 + 3 = a + agg
 ```
 
-```javascript
-// itsAlive reducing -- there's some added boilerplate to set up your living values, but updates can be synchronous or asynchronous
-function add(a,b) { return a+b }
-function logger(x) { console.log(x) } 			
-
-const currentValue = itsAlive(),
-      sum = itsAlive(),
-      log = itsAlive().listenToInput(sum).setReducer(logger)
-
-sum.setReducer(add)
-	.setInputs(sum, currentValue)
-	.listenTo(currentValue)
-
-// synchronous updating
-[1,2,3].forEach((x)=>currentValue.update(x))	// logs 1, 3, 6
-
-// asynchronous updating
-setTimeout(()=>currentValue.update(4), 2000)		// logs 10 after 2 second
-
-```
-
-
-##### **Buffer**
+### 31. Buffer
 
 To maintain a history of past values, simply create a living array that listens to a value whose reducer function pushes updates to the living array.
 
-```javascript
-function logger(x) { console.log(x) }
+[[view code](http://codepen.io/sladav/pen/BpypjJ?editors=0011)]
+```js
+const logger = x => console.log(x)
+const record = (val, arr) => {
+  arr.push(val)
+  return arr
+}
+const [a, history, log] = [...Array(3)].map(itsAlive)
 
-const value = itsAlive(),
-      history = itsAlive([]),
-      log = itsAlive().listenToInput(history).setReducer(logger)
+history.set([])
+  .inputs(a, history)
+  .listenTo(a)
+  .reducer(record)
 
-history
-	.setInputs(value, history)
-	.listenTo(value)
-	.setReducer((val, arr)=>{
-	    arr.push(val)
-	    return arr
-	  })
+log.listenToInput(history).reducer(logger)
 
-// note: the logger is logging new values of `history` after each update
-value.update(1)		// logs [1]
-value.update(2)		// logs [1,2]
-value.update(3)		// logs [1,2,3]
+a.update(1)   // logs [1]
+a.update(2)   // logs [1,2]
+a.update(3)   // logs [1,2,3]
+```
+You can modify the reducer on history to enforce rules. For example, you could add a check like if(arr.length < 10) to only take the first 10 values, or implement a queue structure to keep the 10 latest values.
+
+## Using a Living Values `.trigger` property
+
+### 32. The value that triggered the update is available on `.trigger`
+
+[[view code](http://codepen.io/sladav/pen/xgbgRG?editors=0011)]
+```js
+const logger = x => console.log(x)
+const addOne = x => x + 1
+
+const [a, b, c, merged] = [...Array(5)].map(itsAlive)
+
+merged.listenTo(a,b,c)
+
+a.update(1)
+console.log(merged.trigger.valueOf())   //  1
+
+b.update(2)
+console.log(merged.trigger.valueOf())   //  2
+
+c.update(3)
+console.log(merged.trigger.valueOf())   //  3
 ```
 
-You can modify the reducer on `history` to enforce rules. For example, you could add a check like `if(arr.length < 10)` to only take the first 10 values, or implement a queue structure to keep the 10 latest values.
+### 33. Use `.trigger` as an input to merge values
+
+[[view code](http://codepen.io/sladav/pen/NdPdaL?editors=0011)]
+```js
+const logger = x => console.log(x)
+const addOne = x => x + 1
+
+const [a, b, c, merged, log] = [...Array(5)].map(itsAlive)
+
+merged.listenTo(a,b,c).input(merged.trigger).reducer(addOne)
+log.listenToInput(merged).reducer(logger)
+
+// The merged value uses whatever triggered `merged` to update as its input
+a.update(2)   // 3
+b.update(5)   // 6
+a.update(1)   // 2
+c.update(4)   // 5
+```
+
+## Extra Examples
+
+### 34. A counter
+
+uses some jquery, but it doesn't have to
+
+[[view code](http://codepen.io/sladav/pen/RKwxJm?editors=1010)]
+```html
+<div>
+    <h1 id="count"></h1>
+    <button id="inc">+1</button>
+    <button id="dec">-1</button>
+    <p />
+    <button id="inc2">+2</button>
+    <button id="dec2">-2</button>
+    <h4>note: by design, ± 2 only works when count is even</h4>
+</div>
+```
+```js
+// initialize living values
+const [_buttonClick, count, countDom_] = [...Array(3)].map(itsAlive)
+
+// use jquery to update `_buttonClick`
+// note: using '_' prefix to indicate an "input" from the "real world"
+$('button').click(evt => _buttonClick.update(evt))
+
+count.set(0)
+  .listenTo(_buttonClick)         // update count when button is clicked
+  .input(count, _buttonClick)     
+  .reducer((c, evt)=>{
+    // for each id, define what to do with count, c
+    return {
+      inc: c + 1,
+      dec: c - 1,
+      inc2: c % 2 === 0 ? c + 2 : undefined,
+      dec2: c % 2 === 0 ? c - 2 : undefined
+    }[evt.target.id]
+  })
+
+// update the DOM with the count value
+// note: using the '_' postfix to indicate a "side-effect"/"output" to the "real world"
+countDom_.listenToInput(count)
+  .reducer(count => $('#count').html(count))
+  .update()
+```
+
+### 35. Drag and drop
+
+[[view code](http://codepen.io/sladav/pen/VmoLOy)]
+```js
+const dragTarget = document.getElementById('dragTarget')
+const [_clickXY, _dragXY, dragXY_] = [...Array(3)].map(itsAlive)
+
+// note: using '_' prefix to indicate an "input" from the "real world"
+_clickXY.reducer( target => ({x: target.offsetX, y: target.offsetY}) )  // stores click xy location
+_dragXY.reducer( target => ({x: target.clientX, y: target.clientY}) )   // stores dragTarget's xy location
+
+// _dragXY, the state storing the XY location of the dragTarget, is initially frozen (cannot update)
+//    mousedown on the dragTarget unfreezes _dragXY, allowing it to be updated
+//    mouseup re-freezes _dragXY, preventing it from updating
+_dragXY.freeze()
+dragTarget.onmousedown = evt => {
+  _dragXY.unfreeze()
+  _clickXY.update(evt)
+}
+document.onmouseup = evt => _dragXY.freeze()
+document.onmousemove = evt => _dragXY.update(evt)
+
+// update the dragTarget's top, left properties
+// note: using the '_' postfix to indicate a "side-effect"/"output" to the "real world"
+dragXY_.listenTo(_dragXY)
+  .input(dragTarget, _dragXY, _clickXY)
+  .reducer((target, dragXY, clickXY)=>{
+    target.style.left = `${dragXY.x - clickXY.x}px`
+    target.style.top = `${dragXY.y - clickXY.y}px`
+  })
+```
 
 
-#### **Make *itsAlive* from scratch**
-
-*to be written...*
-
-#### API
-
-*to be written...*
-
-#### Examples
-
-*to be written...*
-
-### License
+# License
 
 MIT
