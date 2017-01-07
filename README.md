@@ -7,11 +7,27 @@ Dead simple FRP.
 
 **itsAlive** hopefully adds tangibility to functional reactive programming (FRP) and makes FRP easier and more accesible to programmers who are new to it.
 
-### Installation
+### Installation & Usage
 
-> **NPM** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `npm install --save its-alive`
->
-> **UNPKG** &nbsp;&nbsp; https://unpkg.com/its-alive@0.4.1
+*Installation*
+**NPM** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `npm install --save its-alive`
+**CDN** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://unpkg.com/its-alive@0.4.1
+
+*Usage*
+**ES6** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`import itsAlive from 'itsAlive'`
+**CDN** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`<script src="https://unpkg.com/its-alive@0.4.1">`
+
+
+### Contents
+
+[Motivation/Concept](#motivationconcept)
+	- [#](#equality) Equality
+	- [#](#assignment) Assignment
+	- [#](#reactive-updating) Reactive Updating
+
+[Main API](#main-api)
+
+[Tutorial (in examples)](#tutorial-in-examples)
 
 
 ## Motivation/Concept
@@ -45,6 +61,7 @@ Assert.AreEqual(21, b)	// true
 ```
 
 **how**:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f(x)
+
 **when**:  &nbsp;&nbsp;always
 
 
@@ -71,6 +88,7 @@ console.log(b)	// 11, not 21  :(
 ```
 
 **how**:  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f(x)
+
 **when**:  &nbsp;&nbsp;at assignment
 
 #### Reactive Updating
@@ -114,8 +132,11 @@ So the goal is to do this (see above for explanation)...
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{c}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{c}{\leftarrow}&space;f(a)" title="b \overset{c}{\leftarrow} f(a)" /></a>
 
 when **c** *updates*
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;apply **a** to
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a function, **f**, and
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assign the result to **b**
 
 
@@ -141,26 +162,68 @@ const b = itsAlive().reducer(f).input(a).listenTo(c)
 
 ----------------
 
-# Tutorial (in Examples)
+# Tutorial (in examples)
 
-- [Static Living Values](#static-living-values)
-  1. [The default Living Value is a `null`](#the-default-living-value-is-a-null)
-  2. [You can **set a value** explicitly](#you-can-set-a-value-explicitly)
+*skip to the [Extra Examples](#extra-examples) to get a better feel for how you might use **itsAlive***
 
--[Living Values with Inputs](#living-values-with-inputs)
--[Reductive Living Values](#reductive-living-values)
--[Reactive Living Values](#reactive-living-values)
--[Synchronously Updating Living Values](#synchronously-updating-living-values)
--[Asynchronously Updating Living Values](#asynchronously-updating-living-values)
--[Ways to stop values from updating](#ways-to-stop-values-from-updating)
--[Map, Filter, Fold (Reduce), Buffer](#map-filter-fold-reduce-buffer)
--[Using a Living Value's `.trigger` property](#using-a-living-values-trigger-property)
--[Extra Examples](#extra-examples)
+[Static Living Values](#static-living-values)
+  - [#1](#1-the-default-living-value-is-a-null) The default Living Value is a `null`
+  - [#2](#2-you-can-set-a-value-explicitly) You can set a value explicitly
+  - [#3](#3-set-an-initial-value-by-supplying-it-to-itsalive) Set an initial value by supplying  it to `itsAlive()`
+  - [#4](#4-you-get-a-living-value-with-valueof) You get a living value with `.valueOf()`
+  - [#5](5-it-can-be-any-js-primitive-or-any-objectarrayfunction-cant-be-undefined) It can be any JS primitive or any object/array/function; can't be `undefined`
 
+[Living Values with Inputs](#living-values-with-inputs)
+  - [#6](#6-you-can-set-any-primitiveobject-as-an-input) You can set any primitive/object as an input
+  - [#7](#7-or-use-another-living-value-as-an-input) Or use another Living Value as an input
+  - [#8](#8-the-default-reducer-doesnt-really-do-anything) The default reducer doesn't really do anything
+  - [#9](#9-update-applies-the-inputs-to-the-reducer-function) `update` applies the inputs to the reducer function
+  - [#10](#10-bypass-defined-inputs-by-supplying-your-own-input-args-to-update) Bypass defined inputs by supplying your own input args to `update`
+  - [#11](#11-note-update-and-set-are-not-the-same) Note: `update` and `set` are not the same
+
+[Reductive Living Values](#reductive-living-values)
+  - [#12](#12-a-reducer-is-a-function-associated-with-a-living-value) A `reducer` is a function associated with a Living Value
+  - [#13](#13-reducers-can-have-side-effects-but-should-be-pure) Reducers can have side-effects (but should be pure)
+  - [#14](#14-living-values-ignore-undefined-update-values) Living Values ignore `undefined` update values
+
+[Reactive Living Values](#reactive-living-values)
+  - [#15](#15-a-living-value-can-to-react-to-another-value-updating-by-listening-for-updates) A Living Value can to react to another value updating by listening for updates
+  - [#16](#16-inputs-and-the-values-that-induce-updates-are-completely-decoupled) Inputs and the values that induce updates are completely decoupled!
+  - [#17](#17-a-living-value-can-listenreact-to-its-own-inputs) A Living Value can listen/react to its own input(s)
+  - [#18](#18-using-listentoinputx-is-the-same-as-listentoxinputx) Using `.listenToInput(x)` is the same as `.listenTo(x).input(x)`
+  - [#19](#19-a-living-value-can-use-itself-as-an-input) A Living Value can use itself as an input
+  - [#20](#20-but-it-should-not-listenreact-to-itself) But it should NOT listen/react to itself
+
+[Synchronously Updating Living Values](#synchronously-updating-living-values)
+  - [#21](#21-update-using-a-for-loop) Update using a for loop
+  - [#22](#22-update-using-array-map) Update using array map
+
+[Asynchronously Updating Living Values](#asynchronously-updating-living-values)
+  - [#23](#23-update-using-a-timer) Update using a timer
+  - [#24](#24-make-a-dom-event-trigger-an-update) Make a DOM event trigger an update
+  - [#25](#25-make-a-promise-trigger-an-update) Make a Promise trigger an update
+
+[Ways to stop values from updating](#ways-to-stop-values-from-updating)
+  - [#26](#26-you-can-freeze-a-living-value) You can freeze a Living Value
+  - [#27](#27-you-can-quiet-a-living-value) You can quiet a Living Value
+
+[Map, Filter, Fold (Reduce), Buffer](#map-filter-fold-reduce-buffer)
+  - [#28](#28-map) Map
+  - [#29](#29-filter) Filter
+  - [#30](30-fold-reduce) Fold (Reduce)
+  - [#31](31-buffer) Buffer
+
+[Using a Living Value's `.trigger` property](#using-a-living-values-trigger-property)
+  - [#32](#32-the-value-that-triggered-the-update-is-available-on-trigger) The value that triggered the update is available on `.trigger`
+  - [#33](#33-use-trigger-as-an-input-to-merge-values) Use `.trigger` as an input to merge values
+
+[Extra Examples](#extra-examples)
+  - [#34](#34-a-counter) A counter
+  - [#35](#35-drag-and-drop) Drag and drop
 
 ## Static Living Values
 
-### 1. The **default** Living Value is a `null`
+### 1. The default Living Value is a `null`
 
 [[view code](http://codepen.io/sladav/pen/WRbxJL?editors=0011)]
 ```js
@@ -168,7 +231,7 @@ const a = itsAlive()
 console.log( a.valueOf() )    // null
 ```
 
-### 2. You can **set a value** explicitly
+### 2. You can set a value explicitly
 
 [[view code](http://codepen.io/sladav/pen/GrgqGx?editors=0011)]
 ```js
@@ -176,7 +239,7 @@ const a = itsAlive().set(5)
 console.log( a.valueOf() )    // 5
 ```
 
-### 3. Set an **initial value** by supplying it to `itsAlive()`
+### 3. Set an initial value by supplying it to `itsAlive()`
 
 [[view code](http://codepen.io/sladav/pen/XpJKBm?editors=0011)]
 ```js
@@ -191,7 +254,7 @@ const a = itsAlive().set(5)
 console.log( a.valueOf() )    // 5
 ```
 
-### 4. You "get" a living value with `.valueOf()`
+### 4. You get a living value with `.valueOf()`
 
 [[view code](http://codepen.io/sladav/pen/dNPXjR?editors=0011)]
 ```js
@@ -217,7 +280,7 @@ console.log( a + 1 )          // 6
 
 ```
 
-### 5. It can be any **JS primitive** or an **object/array/function** except `undefined`
+### 5. It can be any JS primitive or any object/array/function; can't be `undefined`
 
 [[view code](http://codepen.io/sladav/pen/MJYeqg?editors=0011)]
 ###### **null**
@@ -273,7 +336,7 @@ const a = itsAlive().input(5).update()
 console.log( a.valueOf() )    // 5
 ```
 
-### 7. Or use another **Living Value** as an **input**
+### 7. Or use another Living Value as an input
 
 [[view code](http://codepen.io/sladav/pen/ZLYOqY?editors=0011)]
 ```js
@@ -326,7 +389,7 @@ a.update()
 console.log( a.valueOf() )    // 5 -- the result of passing 5 to the identity reducer
 ```
 
-### 11. Note: `update` and `set` are **not the same**
+### 11. Note: `update` and `set` are not the same
 
 `update` applies the inputs (or supplied input args) to the reducer, while
 
@@ -348,7 +411,7 @@ console.log( a.valueOf() )    // 15 -- did not use the reducer
 ```
 
 
-## **Reductive** Living Values
+## Reductive Living Values
 ... know ***how*** to reduce a set of inputs into a value.
 
 ### 12. A `reducer` is a function associated with a Living Value
@@ -374,7 +437,7 @@ console.log( b.valueOf() )        // 2  = a + 1 = 2
 console.log( c.valueOf() )        // 4  = 2 * b = 4
 ```
 
-### 13. Reducers *can* have side-effects (but should be pure)
+### 13. Reducers can have side-effects (but should be pure)
 
 Here's two examples of a logger - they log to the console as a side-effect.
 
@@ -417,7 +480,7 @@ console.log( b.valueOf() )  // still 1 (not undefined)
 ## Reactive Living Values
 ... know ***when*** to reduce a set of inputs into a value.
 
-### 15. A Living Value can to **react** to another value updating by listening for updates
+### 15. A Living Value can to react to another value updating by listening for updates
 
 [[view code](http://codepen.io/sladav/pen/EZayMg?editors=0011)]
 ```js
@@ -665,7 +728,7 @@ setTimeout(()=>{
 
 ## Ways to stop values from updating
 
-## 26. You can freeze a Living Value
+### 26. You can freeze a Living Value
 
 Frozen values cannot be updated. In turn, values listening to the frozen value will not be notified/updated.
 
@@ -686,7 +749,7 @@ console.log(a.valueOf())    // 5
 console.log(b.valueOf())    // 6
 ```
 
-## 27. You can quiet a Living Value
+### 27. You can quiet a Living Value
 Quieted values can be updated, but will not notify/update values that are listening to it.
 
 [[view code](http://codepen.io/sladav/pen/wgBoVP?editors=0011)]
