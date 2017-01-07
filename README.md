@@ -7,6 +7,8 @@ Dead simple FRP.
 
 **itsAlive** hopefully adds tangibility to functional reactive programming (FRP) and makes FRP easier and more accesible to programmers who are new to it.
 
+&nbsp;
+
 ### Installation & Usage
 
 *Installation*
@@ -23,6 +25,7 @@ Dead simple FRP.
 
 **CDN** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`<script src="https://unpkg.com/its-alive@0.4.1">`
 
+&nbsp;
 
 ### Contents
 
@@ -35,6 +38,7 @@ Dead simple FRP.
 
 [Tutorial (in examples)](#tutorial-in-examples)
 
+&nbsp;
 
 ## Motivation/Concept
 
@@ -133,11 +137,13 @@ For example, if calculating `f(a)` is expensive, don't recalculate `b` every tim
 
 ### **Main API**
 
-So the goal is to do this (see above for explanation)...
+The goal is to do this (see above for explanation)...
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{c}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{c}{\leftarrow}&space;f(a)" title="b \overset{c}{\leftarrow} f(a)" /></a>
 
-when **c** *updates*
+&nbsp;
+
+**when c *updates***
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;apply **a** to
 
@@ -145,8 +151,9 @@ when **c** *updates*
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;assign the result to **b**
 
+&nbsp;
 
-So, the API for defining `b` is...
+**So,** the API for defining `b` is...
 
 Initialize `b`
 ```js
