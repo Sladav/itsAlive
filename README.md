@@ -143,7 +143,7 @@ The goal is to do this (see above for explanation)...
 
 &nbsp;
 
-**when c *updates***
+**when c** ***updates***
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;apply **a** to
 
@@ -177,7 +177,7 @@ const b = itsAlive().reducer(f).input(a).listenTo(c)
 
 # Tutorial (in examples)
 
-*skip to the [Extra Examples](#extra-examples) to get a better feel for how you might use **itsAlive***
+*skip to the [Extra Examples](#extra-examples) to get a better feel for how you might use* ***itsAlive***
 
 [Static Living Values](#static-living-values)
   - [#1](#1-the-default-living-value-is-a-null) The default Living Value is a `null`
