@@ -10,20 +10,26 @@ Dead simple FRP.
 ### Installation & Usage
 
 *Installation*
+
 **NPM** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; `npm install --save its-alive`
+
 **CDN** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; https://unpkg.com/its-alive@0.4.1
 
+&nbsp;
+
 *Usage*
+
 **ES6** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`import itsAlive from 'itsAlive'`
+
 **CDN** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`<script src="https://unpkg.com/its-alive@0.4.1">`
 
 
 ### Contents
 
 [Motivation/Concept](#motivationconcept)
-	- [#](#equality) Equality
-	- [#](#assignment) Assignment
-	- [#](#reactive-updating) Reactive Updating
+- [#](#equality) Equality
+- [#](#assignment) Assignment
+- [#](#reactive-updating) Reactive Updating
 
 [Main API](#main-api)
 
@@ -125,7 +131,7 @@ For example, if calculating `f(a)` is expensive, don't recalculate `b` every tim
 <a href="https://www.codecogs.com/eqnedit.php?latex=b&space;\overset{refresh}{\leftarrow}&space;f(a)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?b&space;\overset{refresh}{\leftarrow}&space;f(a)" title="b \overset{refresh}{\leftarrow} f(a)" /></a>
 
 
-### **The Main API**
+### **Main API**
 
 So the goal is to do this (see above for explanation)...
 
