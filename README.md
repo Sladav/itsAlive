@@ -998,6 +998,130 @@ dragXY_.listenTo(_dragXY)
   })
 ```
 
+### 36. Simple Mario
+
+### 36. Simple Mario
+
+[[view example](http://bl.ocks.org/sladav/11718e02a6a4014843b2d361eb668895)]
+
+This example moves Mario around the page when the user presses the arrow keys. Left and right arrows move Mario to the left and right, respectively, and pressing up makes Mario jump. There's a very straightforward "flow" which involves reacting to the user's input to update state and then updating Mario image's x/y position in the DOM.
+
+One of the nice things about **itsAlive** is it's readability. For each variable (piece of state), look at it's inputs to understand what it depends on. For example, Mario's x-position is a function of his current x-position and his x-velocity - it's stated outright, `.input(mario.x, mario.vx)`. When does his x position change? At each "tick" - `.listenTo(_tick)`.
+
+Living values typically listen to other living values - you'll notice that there are two exceptions in this example, `_tick` and `_arrowEvents`. It's no coincidence that they both state with an `_`.  The leading underscore indicates that they aren't listening to any other value; instead some input from the "outside world" is responsible for updating/notifying that value.
+
+```js
+setInterval( () => _tick.notify(), 1000/fps )
+
+document.onkeydown = evt => (evt.preventDefault(), _arrowEvents.update(evt))
+document.onkeyup = evt => _arrowEvents.update(evt)
+```
+
+The reducer of a living value should ALMOST always be a pure function without any side-effects; however, if you want your reducer to have an affect on the "outside world", like logging to the console or updating the DOM, then it must have side-effects. You can think of these side-effects as tangible outputs to the "outside world". In this example, `marioImage_`, has a side effect of modifying `src` the Mario `<img>` tag as well as setting its x/y location. Appending the underscore is a way to indicate that the Living Value has a side-effect and "outputs" to the DOM.
+
+
+```js
+// Set up some constants
+const fps = 60,               // run at 60 frames per second
+      gravity = -0.5,         // y velocity change per frame
+      jumpStrength = 15,      // y velocity when you jump (pixels/frame)
+      speed = 2,              // x velocity when walking (pixels/frame)
+      inputKeys = ["ArrowLeft", "ArrowRight", "ArrowUp"]  // valid keypresses
+
+const [_tick, _arrowEvents, marioImage_] = [...Array(3)].map(itsAlive)
+
+// state: track whether or not keys are pressed
+const keypress = itsAlive({
+  ArrowLeft: false,
+  ArrowRight: false,
+  ArrowUp: false
+})
+
+// state: information about Mario
+const mario = {
+  x: itsAlive(0),
+  y: itsAlive(0),
+  vx: itsAlive(0),
+  vy: itsAlive(0),
+  dir: itsAlive('right')
+}
+
+setInterval( () => _tick.notify(), 1000/fps )
+
+document.onkeydown = evt => (evt.preventDefault(), _arrowEvents.update(evt))
+document.onkeyup = evt => _arrowEvents.update(evt)
+
+_arrowEvents.reducer( evt => {
+  if ( inputKeys.indexOf(evt.key) >= 0 ) return {type: evt.type, key: evt.key}
+})
+
+keypress
+  .listenTo(_arrowEvents)
+  .input(keypress, _arrowEvents)
+  .reducer( (kp, evt) => {
+    kp[evt.key] = {keyup: false, keydown: true}[evt.type]
+    return kp
+})
+
+mario.vx
+  .listenTo(_tick)
+  .input(keypress)
+  .reducer( kp => {
+    if (kp.ArrowLeft && !kp.ArrowRight) return -speed
+    if (!kp.ArrowLeft && kp.ArrowRight) return speed
+    return 0
+})
+
+mario.vy
+  .listenTo(_tick)
+  .input(keypress, mario.y, mario.vy)
+  .reducer( (kp, y, vy) => {
+    if ( y === 0 && kp.ArrowUp ) return jumpStrength
+    if ( y > 0 ) return vy + gravity
+})
+
+mario.x
+  .listenTo(_tick)
+  .input(mario.x, mario.vx)
+  .reducer( (x, vx) => x + vx )
+
+mario.y
+  .listenTo(_tick)
+  .input(mario.y, mario.vy)
+  .reducer( (y, vy) => {
+    return y + vy > 0 ? y + vy : 0
+})
+
+mario.dir
+  .listenTo(_tick)
+  .input(mario.vx)
+  .reducer( vx => {
+    if (vx > 0) return 'right'
+    if (vx < 0) return 'left'
+  })
+
+marioImage_
+  .listenTo(_tick)
+  .input(mario.x, mario.y, mario.vx, mario.dir, marioImage_)
+  .reducer( (x, y, vx, dir, marioImage) => {
+    const mario = document.getElementById('mario')
+    let verb = 'stand'
+
+    if (y > 0) {
+      verb = 'jump'
+    } else if (vx !== 0) {
+      verb = 'walk'
+    }
+
+    src = `${verb}-${dir}.gif`
+    if( marioImage !== src) mario.src = src
+    mario.style.left = `${x}px`
+    mario.style.bottom = `${53+y}px`
+
+    return src
+})
+```
+
 
 # License
 
