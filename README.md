@@ -1000,9 +1000,7 @@ dragXY_.listenTo(_dragXY)
 
 ### 36. Simple Mario
 
-### 36. Simple Mario
-
-[[view example](http://bl.ocks.org/sladav/11718e02a6a4014843b2d361eb668895)]
+[[view example](http://bl.ocks.org/Sladav/raw/11718e02a6a4014843b2d361eb668895/)]
 
 This example moves Mario around the page when the user presses the arrow keys. Left and right arrows move Mario to the left and right, respectively, and pressing up makes Mario jump. There's a very straightforward "flow" which involves reacting to the user's input to update state and then updating Mario image's x/y position in the DOM.
 
