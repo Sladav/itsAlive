@@ -230,9 +230,18 @@ const b = itsAlive().reducer(f).input(a).listenTo(c)
   - [#32](#32-the-value-that-triggered-the-update-is-available-on-trigger) The value that triggered the update is available on `.trigger`
   - [#33](#33-use-trigger-as-an-input-to-merge-values) Use `.trigger` as an input to merge values
 
+[Reducer's `this` keyword is the living value itself](#reducers-this-keyword-is-the-living-value-itself)
+  - [#34](#34-explicitly-set-this-as-side-effect)
+
+[Delay, Debounce, and Throttle](#delay-debounce-and-throttle)
+  - [#35](#35-delay)
+  - [#36](#36-debounce)
+  - [#37](#37-throttle)
+
 [Extra Examples](#extra-examples)
-  - [#34](#34-a-counter) A counter
-  - [#35](#35-drag-and-drop) Drag and drop
+  - [#38](#38-a-counter) A counter
+  - [#39](#39-drag-and-drop) Drag and drop
+  - [#40](#40-simple-mario) Simple Mario
 
 ## Static Living Values
 
@@ -920,13 +929,167 @@ a.update(1)   // 2
 c.update(4)   // 5
 ```
 
+## Reducer's `this` keyword is the living value itself
+
+### 34. Explicitly set `this` as side-effect
+
+Typically, if you don't return a value from a reducer, `undefined` is returned by default and, as a result, the Living Value does not update. However, the Living Value can be accessed with the `this` and set explicitly. This, in effect, is the same as returning the new value.
+
+**NOTE: Reducer cannot be an arrow function if you want to access Living Value as `this`!**
+
+[[view code](http://codepen.io/sladav/pen/zNdYBJ?editors=0011)]
+
+```js
+console.clear()
+itsAlive = itsAlive.default
+
+const logger = x => console.log(x)
+const addOne = x => x + 1
+
+const [a, b, log] = [...Array(3)].map(itsAlive)
+
+b.listenToInput(a).reducer(function (a) {
+  this.set(addOne(a))
+})
+
+log.listenToInput(b).reducer(logger)
+
+a.update(1)
+```
+
+
+## Delay, Debounce, and Throttle
+
+You can utilize the `this` keyword from inside the reducer to dynamically freeze, quiet, and set a value - note that you can do this asynchronously! Delaying, debouncing, and throttling updates can be executed fairly simply as a result.
+
+### 35. Delay
+
+[[view code](http://codepen.io/sladav/pen/vgZpaR?editors=0010)]
+
+```js
+// initialize living values
+const [_move, delayed, draw_] = [...Array(3)].map(itsAlive)
+
+document.addEventListener('mousemove', (evt) => {
+  _move.set({x: evt.clientX, y: evt.clientY})
+})
+
+_move.update({x:50, y:50})
+
+delayed
+  .listenToInput(_move)
+  .reducer( function (pos) {
+    setTimeout(()=>{
+      this.set(pos)
+    }, 200)
+  })
+  .update()
+
+draw_.listenToInput(_move, delayed)
+  .reducer( (c1Pos, c2Pos) => {
+    let c1 = document.getElementById('c1')
+    let c2 = document.getElementById('c2')
+
+    c1.style.left = `${c1Pos.x-20}px`
+    c1.style.top = `${c1Pos.y-20}px`
+
+    c2.style.left = `${c2Pos.x-40}px`
+    c2.style.top = `${c2Pos.y-40}px`
+  })
+  ```
+
+### 36. Debounce
+
+[[view code](http://codepen.io/sladav/pen/wgePMg?editors=0010)]
+
+```js
+console.clear()
+itsAlive = itsAlive.default
+
+// initialize living values
+const [_move, debounced, draw_] = [...Array(3)].map(itsAlive)
+
+document.addEventListener('mousemove', (evt) => {
+  _move.set({x: evt.clientX, y: evt.clientY})
+})
+
+_move.update({x:50, y:50})
+
+let id = null
+debounced
+  .listenToInput(_move)
+  .reducer( function (pos) {
+    clearTimeout(id)
+    id = setTimeout(()=>{
+      this.set(pos)
+    }, 200)
+  })
+  .update()
+
+draw_.listenToInput(_move, debounced)
+  .reducer( (c1Pos, c2Pos) => {
+    let c1 = document.getElementById('c1')
+    let c2 = document.getElementById('c2')
+
+    c1.style.left = `${c1Pos.x-20}px`
+    c1.style.top = `${c1Pos.y-20}px`
+
+    c2.style.left = `${c2Pos.x-40}px`
+    c2.style.top = `${c2Pos.y-40}px`
+  })
+```
+
+### 37. Throttle
+
+[[view code](http://codepen.io/sladav/pen/egRGKe?editors=0010)]
+
+```js
+console.clear()
+itsAlive = itsAlive.default
+
+// initialize living values
+const [_move, throttled, draw_] = [...Array(3)].map(itsAlive)
+
+document.addEventListener('mousemove', (evt) => {
+  _move.set({x: evt.clientX, y: evt.clientY})
+})
+
+_move.update({x:50, y:50})
+
+let id = null
+throttled
+  .listenToInput(_move)
+  .reducer( function (pos) {
+    this.set(pos)
+    this.freeze()
+    id = setTimeout(()=>{
+      this.unfreeze()
+      this.update()
+    }, 1000)
+  })
+  .update()
+
+draw_.listenToInput(_move, throttled)
+  .reducer( (c1Pos, c2Pos) => {
+    let c1 = document.getElementById('c1')
+    let c2 = document.getElementById('c2')
+
+    c1.style.left = `${c1Pos.x-20}px`
+    c1.style.top = `${c1Pos.y-20}px`
+
+    c2.style.left = `${c2Pos.x-40}px`
+    c2.style.top = `${c2Pos.y-40}px`
+  })
+```
+
 ## Extra Examples
 
-### 34. A counter
+### 38. A counter
 
 uses some jquery, but it doesn't have to
 
 [[view code](http://codepen.io/sladav/pen/RKwxJm?editors=1010)]
+
 ```html
 <div>
     <h1 id="count"></h1>
@@ -966,7 +1129,7 @@ countDom_.listenToInput(count)
   .update()
 ```
 
-### 35. Drag and drop
+### 39. Drag and drop
 
 [[view code](http://codepen.io/sladav/pen/VmoLOy)]
 ```js
@@ -998,7 +1161,7 @@ dragXY_.listenTo(_dragXY)
   })
 ```
 
-### 36. Simple Mario
+### 40. Simple Mario
 
 [[view example](http://bl.ocks.org/Sladav/raw/11718e02a6a4014843b2d361eb668895/)]
 
