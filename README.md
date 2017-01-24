@@ -231,12 +231,12 @@ const b = itsAlive().reducer(f).input(a).listenTo(c)
   - [#33](#33-use-trigger-as-an-input-to-merge-values) Use `.trigger` as an input to merge values
 
 [Reducer's `this` keyword is the living value itself](#reducers-this-keyword-is-the-living-value-itself)
-  - [#34](#34-explicitly-set-this-as-side-effect)
+  - [#34](#34-explicitly-set-this-as-side-effect) Explicitly set this as side-effect
 
 [Delay, Debounce, and Throttle](#delay-debounce-and-throttle)
-  - [#35](#35-delay)
-  - [#36](#36-debounce)
-  - [#37](#37-throttle)
+  - [#35](#35-delay) Delay
+  - [#36](#36-debounce) Debounce
+  - [#37](#37-throttle) Throttle
 
 [Extra Examples](#extra-examples)
   - [#38](#38-a-counter) A counter
